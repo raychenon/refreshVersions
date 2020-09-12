@@ -41,14 +41,14 @@ private fun Project.attemptDependencyMigration(
             dependencyMapping.constantName
         } else null
     }
-    val done: Boolean = when (availableDependenciesConstants.size) {
-        0 -> offerReplacingHardcodedVersionWithPlaceholder(dependency.module)
-        else -> offerReplacingHardcodedVersionWithConstantOrPlaceholder(
-            moduleIdentifier = dependency.module,
-            constants = availableDependenciesConstants
-        )
-    }
-    if (done.not()) return
+//    val done: Boolean = when (availableDependenciesConstants.size) {
+//        0 -> offerReplacingHardcodedVersionWithPlaceholder(dependency.module)
+//        else -> offerReplacingHardcodedVersionWithConstantOrPlaceholder(
+//            moduleIdentifier = dependency.module,
+//            constants = availableDependenciesConstants
+//        )
+//    }
+//    if (done.not()) return
     val versionKey = getVersionPropertyName(dependency.module, versionKeyReader)
     writeCurrentVersionInProperties(
         versionKey = versionKey,
@@ -57,7 +57,10 @@ private fun Project.attemptDependencyMigration(
     logAddedVersionsKey(versionKey)
 }
 
+var MIGRATE_ALL = true
+
 private fun offerReplacingHardcodedVersionWithPlaceholder(moduleIdentifier: ModuleIdentifier): Boolean {
+    if (MIGRATE_ALL) return true
     val genericUi = CliGenericUi()
     val group = moduleIdentifier.group
     val name = moduleIdentifier.name
@@ -76,6 +79,8 @@ private fun offerReplacingHardcodedVersionWithConstantOrPlaceholder(
     moduleIdentifier: ModuleIdentifier,
     constants: List<String>
 ): Boolean {
+    if (MIGRATE_ALL) return true
+
     require(constants.isNotEmpty())
     val genericUi = CliGenericUi()
     val group = moduleIdentifier.group

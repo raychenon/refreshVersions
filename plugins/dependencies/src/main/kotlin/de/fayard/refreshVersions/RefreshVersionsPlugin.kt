@@ -34,7 +34,7 @@ open class RefreshVersionsPlugin : Plugin<Project> {
             group = "help"
             description = "Assists migration from hardcoded dependencies to constants of " +
                 "the refreshVersions dependencies plugin"
-            finalizedBy("refreshVersions")
+            //finalizedBy("refreshVersions")
         }
 
         project.tasks.registerOrCreate<BuildSrcVersionsTask>(

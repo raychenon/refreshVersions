@@ -40,9 +40,47 @@ internal fun Project.countDependenciesWithHardcodedVersions(versionsProperties: 
     }
 }
 
+
+fun configurationsWithHardcodedDepdencies(rootProject: Project) {
+    require(rootProject == rootProject.rootProject) { "Expected a rootProject but got $rootProject" }
+    val versionsProperties = RefreshVersionsConfigHolder.readVersionProperties()
+    val versionKeyReader = RefreshVersionsConfigHolder.versionKeyReader
+
+    val projectsWithHardcodedDependenciesVersions: List<Project> = rootProject.allprojects.filter {
+        it.countDependenciesWithHardcodedVersions(versionsProperties) > 0
+    }
+
+    val configurationsWithHardcodedDependencies = projectsWithHardcodedDependenciesVersions.flatMap { project ->
+        project.configurations.filterNot { configuration ->
+            configuration.shouldBeIgnored() || 0 == configuration.countDependenciesWithHardcodedVersions(versionsProperties, versionKeyReader)
+        }.map { configuration -> project to configuration }
+    }
+
+    val keysAndVersions = configurationsWithHardcodedDependencies.flatMap { (project, configuration) ->
+        configuration.dependencies
+            .filterIsInstance<ExternalDependency>()
+            .filter { it.hasHardcodedVersion(versionsProperties, versionKeyReader) && it.version != null }
+            .map { dependency: ExternalDependency ->
+                val versionKey = getVersionPropertyName(dependency.module, versionKeyReader)
+                versionKey to dependency.version!!
+            }
+    }
+    val newEntries = keysAndVersions
+        .groupBy({it.first}, {it.second})
+        .mapValues { entry -> entry.value.max()!! }
+        .toList()
+        .sortedBy { it.first }
+    newEntries.forEach { println(it) }
+    writeWithNewEntries(RefreshVersionsConfigHolder.versionsPropertiesFile, newEntries)
+    Thread.sleep(1000)
+
+}
+
+
 internal fun promptProjectSelection(rootProject: Project): Project? {
     require(rootProject == rootProject.rootProject) { "Expected a rootProject but got $rootProject" }
     val versionsProperties = RefreshVersionsConfigHolder.readVersionProperties()
+
     val projectsWithHardcodedDependenciesVersions: List<Pair<Project, Int>> = rootProject.allprojects.mapNotNull {
         val hardcodedDependenciesVersionsCount = it.countDependenciesWithHardcodedVersions(versionsProperties)
         if (hardcodedDependenciesVersionsCount > 0) {
