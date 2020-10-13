@@ -19,4 +19,5 @@ dependencies {
     implementation("com.google.inject:guice:_")
     implementation(AndroidX.annotation)
     implementation("org.jetbrains:annotations:_")
+    implementation(Square.moshi)
 }
